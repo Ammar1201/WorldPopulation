@@ -1,61 +1,23 @@
-
 const ctx = document.getElementById('myChart');
-// const myChart = new Chart(ctx, {
-//   type: 'bar',
-//   data: {
-//       labels: ['Austria', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange','Austria', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-//       datasets: [
-//         {
-//           label: 'Population',
-//           data: [12, 19, 3, 5, 2, 3,12, 19, 3, 5, 2, 3],
-//           backgroundColor: [
-//             'rgba(255, 99, 132, 0.8)',
-//           ],
-//           borderColor: [
-//             'rgba(255, 99, 132, 1)',
-//           ],
-//           borderWidth: 1
-//         },
-//         {
-//           label: 'Number',
-//           data: [10, 15, 13, 15, 12, 13, 10, 20, 3, 5, 2, 3],
-//           backgroundColor: [
-//             'rgba(255, 0, 132, 0.8)',
-//           ],
-//           borderColor: [
-//             'rgba(255, 0, 132, 1)',
-//           ],
-//           borderWidth: 1
-//         },
-//       ],
-//   },
-//   options: {
-//     scales: {
-//       y: {
-//         beginAtZero: true
-//       }
-//     }
-//   },
-// });
+const continents = document.querySelector('#continents');
+let firstChart = true;
+const tmp = {};
 
-const fetchData = async (url) => {
+const getData = async (url) => {
   try {
-    const res = await axios.get(url);
-    return res.data;
+    const res = await fetch(url);
+    if(!res.ok) {
+      throw Error('error fetching GET');
+    }
+    const data = res.json();
+    return data;
   }
   catch(err) {
     console.log(err);
   }
 };
 
-const POSTData = async (url, method) => {
-  // try {
-  //   const res = await axios.post(url, method);
-  //   return res.data;
-  // }
-  // catch(err) {
-  //   console.log(err);
-  // }
+const postData = async (url, method) => {
   try {
     const res = await fetch(url, method);
     const data = await res.json();
@@ -66,23 +28,10 @@ const POSTData = async (url, method) => {
   }
 };
 
-const fillChart = async () => {
-  // const method = {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json'
-  //   },
-  //   body: JSON.stringify({
-  //     country: 'france'
-  //   })
-  // }
-
-  // const method = { country: 'france' };
-
-  const countries = await fetchData('https://restcountries.com/v3.1/region/asia');
+const fillChart = async (continent) => {
+  const countries = await getData('https://restcountries.com/v3.1/region/' + continent);
   const populationPromises = [];
   countries.forEach(country => {
-    // const method = { country: country.name.common };
     const method = {
       method: 'POST',
       headers: {
@@ -92,12 +41,9 @@ const fillChart = async () => {
         country: country.name.common
       })
     }
-    populationPromises.push(POSTData('https://countriesnow.space/api/v0.1/countries/population', method));
+    populationPromises.push(postData('https://countriesnow.space/api/v0.1/countries/population', method));
   });
-  console.log(populationPromises);
   const population = await Promise.all(populationPromises);
-  console.log(population);
-
   const obj = {
     type: 'bar',
     data: {
@@ -136,7 +82,25 @@ const fillChart = async () => {
     }
   });
 
-  const myChart = new Chart(ctx, obj);
+  if(firstChart) {
+    const myChart = new Chart(ctx, obj);
+    tmp.chart = myChart;
+    firstChart = false;
+  }
+  else {
+    tmp.chart.destroy();
+    const myChart = new Chart(ctx, obj);
+    tmp.chart = myChart;
+  }
 };
 
-fillChart();
+continents.addEventListener('click', (e) => {
+  const target = e.target;
+  if(target.textContent.length > 7) {
+    return;
+  }
+  fillChart(target.textContent.toLowerCase());
+},
+{
+  capture: true
+});
