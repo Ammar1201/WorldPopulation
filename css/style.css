@@ -1,3 +1,27 @@
-h1 {
-  color: red;
+/* body {
+  background: #333;
+} */
+
+#myChart {
+  height: 400px;
+  width: 400px;
+}
+
+#continents {
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4rem;
+  border: 1px solid black;
+}
+
+#continents button {
+  padding: 1rem 4rem;
+  background-color: aqua;
+  border-color: aqua;
+}
+
+#continents button:hover {
+  cursor: pointer;
 }
