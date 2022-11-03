@@ -28,8 +28,7 @@ const postData = async (url, method) => {
   }
 };
 
-const fillChart = async (continent) => {
-  const countries = await getData('https://restcountries.com/v3.1/region/' + continent);
+const getCountriesPopulations = countries => {
   const populationPromises = [];
   countries.forEach(country => {
     const method = {
@@ -43,7 +42,10 @@ const fillChart = async (continent) => {
     }
     populationPromises.push(postData('https://countriesnow.space/api/v0.1/countries/population', method));
   });
-  const population = await Promise.all(populationPromises);
+  return populationPromises;
+};
+
+const addChartData = (countries, population) => {
   const obj = {
     type: 'bar',
     data: {
@@ -81,17 +83,29 @@ const fillChart = async (continent) => {
       obj.data.datasets[0].data.push(population[index].data.populationCounts[length].value);
     }
   });
+  return obj;
+};
 
+const updateChart = chartData => {
   if(firstChart) {
-    const myChart = new Chart(ctx, obj);
+    const myChart = new Chart(ctx, chartData);
     tmp.chart = myChart;
     firstChart = false;
   }
   else {
     tmp.chart.destroy();
-    const myChart = new Chart(ctx, obj);
+    const myChart = new Chart(ctx, chartData);
     tmp.chart = myChart;
   }
+};
+
+const fillChart = async (continent) => {
+  const countries = await getData('https://restcountries.com/v3.1/region/' + continent);
+  const populationPromises = getCountriesPopulations(countries);
+  const population = await Promise.all(populationPromises);
+
+  const chartData = addChartData(countries, population);
+  updateChart(chartData);
 };
 
 continents.addEventListener('click', (e) => {
