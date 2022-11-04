@@ -30,6 +30,14 @@ const postData = async (url, method) => {
   }
 };
 
+const checkStorage = (key) => {
+  const item = window.localStorage.getItem(key);
+  if(item !== null) {
+    return item;
+  }
+  return null;
+}
+
 const createBtn = (text) => {
   const btn = document.createElement('button');
   btn.textContent = text;
@@ -180,33 +188,63 @@ const updateChart = chartData => {
   }
 };
 
-const fillChartCountries = async (continent) => {
+const fillChartCountries = async (url, continent) => {
   loading.classList.remove('hidden');
-  const countries = await getData(continent);
-  const populationPromises = getCountriesPopulations(countries);
-  const population = await Promise.all(populationPromises);
-  const chartData = addChartDataCountries(countries, population);
-  updateChart(chartData);
+  const item = checkStorage(continent);
+  if(item === null) {
+    const countries = await getData(url + continent);
+    const populationPromises = getCountriesPopulations(countries);
+    const population = await Promise.all(populationPromises);
+    const chartData = addChartDataCountries(countries, population);
+    updateChart(chartData);
+    window.localStorage.setItem(continent, JSON.stringify(countries));
+    const tmp = population.filter(population => {
+      if(population !== undefined || population.data !== undefined) {
+        return population;
+      }
+    });
+    window.localStorage.setItem(`${continent} countries population`, JSON.stringify(tmp));
+  }
+  else {
+    const countries = JSON.parse(window.localStorage.getItem(continent));
+    const population = JSON.parse(window.localStorage.getItem(`${continent} countries population`));
+    const chartData = addChartDataCountries(countries, population);
+    updateChart(chartData);
+  }
   loading.classList.add('hidden');
 };
 
 const fillChartCities = async (url, country) => {
   loading.classList.remove('hidden');
-  const cities = await postData(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      country: country
-    })
-  });
-  const populationPromises = getCitiesPopulations(cities.data);
-  const population = await Promise.all(populationPromises);
-  console.log(population);
-
-  const chartData = addChartDataCities(cities.data, population);
-  updateChart(chartData);
+  const item = checkStorage(country);
+  if(item === null) {
+    const cities = await postData(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        country: country
+      })
+    });
+    window.localStorage.setItem(country, JSON.stringify(cities));
+    const populationPromises = getCitiesPopulations(cities.data);
+    const population = await Promise.all(populationPromises);
+    const chartData = addChartDataCities(cities.data, population);
+    updateChart(chartData);
+    const tmp = population.filter(population => {
+      if(population !== undefined || population.data !== undefined) {
+        return population;
+      }
+    });
+    window.localStorage.setItem(`${country} cities population`, JSON.stringify(tmp));
+  }
+  else {
+    const cities = JSON.parse(window.localStorage.getItem(country));
+    const population = JSON.parse(window.localStorage.getItem(`${country} cities population`));
+    const chartData = addChartDataCities(cities.data, population);
+    updateChart(chartData);
+  }
   loading.classList.add('hidden');
 };
 
@@ -215,7 +253,7 @@ continents.addEventListener('click', (e) => {
   if(target.id === 'continents') {
     return;
   }
-  fillChartCountries('https://restcountries.com/v3.1/region/'  + target.textContent.toLowerCase());
+  fillChartCountries('https://restcountries.com/v3.1/region/', target.textContent.toLowerCase());
 },
 {
   capture: true
