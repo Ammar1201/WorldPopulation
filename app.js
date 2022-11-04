@@ -38,6 +38,18 @@ const checkStorage = (key) => {
   return null;
 }
 
+const filterData = data => {
+  if(data !== undefined) {
+    const filteredData = data.filter(value => {
+      if(value !== undefined || value.error === true || value.data !== undefined) {
+        return value;
+      }
+    });
+    return filteredData;
+  }
+  return null;
+};
+
 const createBtn = (text) => {
   const btn = document.createElement('button');
   btn.textContent = text;
@@ -163,7 +175,7 @@ const addChartDataCities = (cities, population) => {
   
   cities.forEach((city, index) => {
     let length = -1;
-    if(population[index] !== undefined && population[index].data !== undefined) {
+    if(population[index] !== null && population[index] !== undefined && population[index].data !== undefined) {
       length = population[index].data.populationCounts.length - 1;
     }
     if(length !== -1) {
@@ -175,46 +187,50 @@ const addChartDataCities = (cities, population) => {
   return obj;
 };
 
-const updateChart = chartData => {
-  if(firstChart) {
-    const myChart = new Chart(ctx, chartData);
-    tmpChart.chart = myChart;
-    firstChart = false;
-  }
-  else {
-    tmpChart.chart.destroy();
-    const myChart = new Chart(ctx, chartData);
-    tmpChart.chart = myChart;
-  }
-};
+// const updateChart = chartData => {
+//   if(firstChart) {
+//     const myChart = new Chart(ctx, chartData);
+//     tmpChart.chart = myChart;
+//     firstChart = false;
+//   }
+//   else {
+//     tmpChart.chart.destroy();
+//     const myChart = new Chart(ctx, chartData);
+//     tmpChart.chart = myChart;
+//   }
+// };
 
 const fillChartCountries = async (url, continent) => {
+  if(tmpChart.chart !== undefined) {
+    tmpChart.chart.destroy();
+  }
   loading.classList.remove('hidden');
   const item = checkStorage(continent);
   if(item === null) {
     const countries = await getData(url + continent);
     const populationPromises = getCountriesPopulations(countries);
-    const population = await Promise.all(populationPromises);
+    const populationTMP = await Promise.all(populationPromises);
+    const population = filterData(populationTMP);
     const chartData = addChartDataCountries(countries, population);
-    updateChart(chartData);
+    tmpChart.chart = new Chart(ctx, chartData);
+    // updateChart(chartData);
     window.localStorage.setItem(continent, JSON.stringify(countries));
-    const tmp = population.filter(population => {
-      if(population !== undefined || population.data !== undefined) {
-        return population;
-      }
-    });
-    window.localStorage.setItem(`${continent} countries population`, JSON.stringify(tmp));
+    window.localStorage.setItem(`${continent} countries population`, JSON.stringify(population));
   }
   else {
     const countries = JSON.parse(window.localStorage.getItem(continent));
     const population = JSON.parse(window.localStorage.getItem(`${continent} countries population`));
     const chartData = addChartDataCountries(countries, population);
-    updateChart(chartData);
+    tmpChart.chart = new Chart(ctx, chartData);
+    // updateChart(chartData);
   }
   loading.classList.add('hidden');
 };
 
 const fillChartCities = async (url, country) => {
+  if(tmpChart.chart !== undefined) {
+    tmpChart.chart.destroy();
+  }
   loading.classList.remove('hidden');
   const item = checkStorage(country);
   if(item === null) {
@@ -227,23 +243,21 @@ const fillChartCities = async (url, country) => {
         country: country
       })
     });
-    window.localStorage.setItem(country, JSON.stringify(cities));
     const populationPromises = getCitiesPopulations(cities.data);
     const population = await Promise.all(populationPromises);
+    // const population = filterData(populationTMP);
     const chartData = addChartDataCities(cities.data, population);
-    updateChart(chartData);
-    const tmp = population.filter(population => {
-      if(population !== undefined || population.data !== undefined) {
-        return population;
-      }
-    });
-    window.localStorage.setItem(`${country} cities population`, JSON.stringify(tmp));
+    tmpChart.chart = new Chart(ctx, chartData);
+    // updateChart(chartData);
+    window.localStorage.setItem(country, JSON.stringify(cities));
+    window.localStorage.setItem(`${country} cities population`, JSON.stringify(population));
   }
   else {
     const cities = JSON.parse(window.localStorage.getItem(country));
     const population = JSON.parse(window.localStorage.getItem(`${country} cities population`));
     const chartData = addChartDataCities(cities.data, population);
-    updateChart(chartData);
+    tmpChart.chart = new Chart(ctx, chartData);
+    // updateChart(chartData);
   }
   loading.classList.add('hidden');
 };
