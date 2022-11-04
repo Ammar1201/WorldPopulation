@@ -1,7 +1,7 @@
 const ctx = document.getElementById('myChart');
 const continents = document.querySelector('#continents');
 const btns = document.querySelector('#btns');
-const loader = document.querySelector('.loader');
+const loading = document.querySelector('.loader');
 let firstChart = true;
 const tmpChart = {};
 
@@ -181,17 +181,17 @@ const updateChart = chartData => {
 };
 
 const fillChartCountries = async (continent) => {
-  loader.classList.remove('hidden');
+  loading.classList.remove('hidden');
   const countries = await getData(continent);
   const populationPromises = getCountriesPopulations(countries);
   const population = await Promise.all(populationPromises);
   const chartData = addChartDataCountries(countries, population);
   updateChart(chartData);
-  loader.classList.add('hidden');
+  loading.classList.add('hidden');
 };
 
 const fillChartCities = async (url, country) => {
-  loader.classList.remove('hidden');
+  loading.classList.remove('hidden');
   const cities = await postData(url, {
     method: 'POST',
     headers: {
@@ -207,7 +207,7 @@ const fillChartCities = async (url, country) => {
 
   const chartData = addChartDataCities(cities.data, population);
   updateChart(chartData);
-  loader.classList.add('hidden');
+  loading.classList.add('hidden');
 };
 
 continents.addEventListener('click', (e) => {
