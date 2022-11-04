@@ -1,7 +1,8 @@
 const ctx = document.getElementById('myChart');
 const continents = document.querySelector('#continents');
+const btns = document.querySelector('#btns');
 let firstChart = true;
-const tmp = {};
+const tmpChart = {};
 
 const getData = async (url) => {
   try {
@@ -25,6 +26,21 @@ const postData = async (url, method) => {
   }
   catch(err) {
     console.log(err);
+  }
+};
+
+const createBtn = (text) => {
+  const btn = document.createElement('button');
+  btn.textContent = text;
+  btns.appendChild(btn);
+};
+
+const clearBtns = () => {
+  let child = btns.firstElementChild;
+  while(child != null) {
+    const tmp = child.nextElementSibling;
+    child.remove();
+    child = tmp;
   }
 };
 
@@ -72,6 +88,8 @@ const addChartData = (countries, population) => {
       }
     },
   };
+
+  clearBtns();
   
   countries.forEach((country, index) => {
     let length = -1;
@@ -80,6 +98,7 @@ const addChartData = (countries, population) => {
     }
     if(length !== -1) {
       obj.data.labels.push(country.name.common);
+      createBtn(country.name.common);
       obj.data.datasets[0].data.push(population[index].data.populationCounts[length].value);
     }
   });
@@ -89,18 +108,18 @@ const addChartData = (countries, population) => {
 const updateChart = chartData => {
   if(firstChart) {
     const myChart = new Chart(ctx, chartData);
-    tmp.chart = myChart;
+    tmpChart.chart = myChart;
     firstChart = false;
   }
   else {
-    tmp.chart.destroy();
+    tmpChart.chart.destroy();
     const myChart = new Chart(ctx, chartData);
-    tmp.chart = myChart;
+    tmpChart.chart = myChart;
   }
 };
 
-const fillChart = async (continent) => {
-  const countries = await getData('https://restcountries.com/v3.1/region/' + continent);
+const fillChartCountries = async (continent) => {
+  const countries = await getData(continent);
   const populationPromises = getCountriesPopulations(countries);
   const population = await Promise.all(populationPromises);
 
@@ -113,7 +132,7 @@ continents.addEventListener('click', (e) => {
   if(target.textContent.length > 7) {
     return;
   }
-  fillChart(target.textContent.toLowerCase());
+  fillChartCountries('https://restcountries.com/v3.1/region/'  + target.textContent.toLowerCase());
 },
 {
   capture: true

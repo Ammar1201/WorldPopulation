@@ -24,3 +24,20 @@
 #continents button:hover {
   cursor: pointer;
 }
+
+#btns {
+  width: 100vw;
+}
+
+#btns button {
+  padding: 1rem 2rem;
+  margin-right: 10px;
+  margin-bottom: 10px;
+  flex-grow: 1;
+  background-color: aqua;
+  border-color: aqua;
+}
+
+#btns button:hover {
+  cursor: pointer;
+}
