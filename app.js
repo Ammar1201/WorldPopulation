@@ -1,6 +1,7 @@
 const ctx = document.getElementById('myChart');
 const continents = document.querySelector('#continents');
 const btns = document.querySelector('#btns');
+const loader = document.querySelector('.loader');
 let firstChart = true;
 const tmpChart = {};
 
@@ -180,16 +181,18 @@ const updateChart = chartData => {
 };
 
 const fillChartCountries = async (continent) => {
+  loader.classList.remove('hidden');
   const countries = await getData(continent);
   const populationPromises = getCountriesPopulations(countries);
   const population = await Promise.all(populationPromises);
-
   const chartData = addChartDataCountries(countries, population);
   updateChart(chartData);
+  loader.classList.add('hidden');
 };
 
-const fillChartCities = async (country) => {
-  const cities = await postData('https://countriesnow.space/api/v0.1/countries/cities', {
+const fillChartCities = async (url, country) => {
+  loader.classList.remove('hidden');
+  const cities = await postData(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -204,6 +207,7 @@ const fillChartCities = async (country) => {
 
   const chartData = addChartDataCities(cities.data, population);
   updateChart(chartData);
+  loader.classList.add('hidden');
 };
 
 continents.addEventListener('click', (e) => {
@@ -222,7 +226,7 @@ btns.addEventListener('click', (e) => {
   if(target.id === 'btns') {
     return;
   }
-  fillChartCities(target.textContent.toLowerCase());
+  fillChartCities('https://countriesnow.space/api/v0.1/countries/cities', target.textContent.toLowerCase());
 },
 {
   capture: true
