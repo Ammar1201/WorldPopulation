@@ -65,6 +65,22 @@ const clearBtns = () => {
   }
 };
 
+const disableBtns = element => {
+  let child = element.firstElementChild;
+  while(child != null) {
+    child.setAttribute('disabled', '');
+    child = child.nextElementSibling;
+  }
+};
+
+const enableBtns = element => {
+  let child = element.firstElementChild;
+  while(child != null) {
+    child.removeAttribute('disabled');
+    child = child.nextElementSibling;
+  }
+};
+
 const getCountriesPopulations = countries => {
   const populationPromises = [];
   countries.forEach(country => {
@@ -201,6 +217,8 @@ const addChartDataCities = (cities, population) => {
 // };
 
 const fillChartCountries = async (url, continent) => {
+  disableBtns(continents);
+  disableBtns(btns);
   if(tmpChart.chart !== undefined) {
     tmpChart.chart.destroy();
   }
@@ -225,9 +243,13 @@ const fillChartCountries = async (url, continent) => {
     // updateChart(chartData);
   }
   loading.classList.add('hidden');
+  enableBtns(continents);
+  enableBtns(btns);
 };
 
 const fillChartCities = async (url, country) => {
+  disableBtns(continents);
+  disableBtns(btns);
   if(tmpChart.chart !== undefined) {
     tmpChart.chart.destroy();
   }
@@ -260,6 +282,8 @@ const fillChartCities = async (url, country) => {
     // updateChart(chartData);
   }
   loading.classList.add('hidden');
+  enableBtns(continents);
+  enableBtns(btns);
 };
 
 continents.addEventListener('click', (e) => {
