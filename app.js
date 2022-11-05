@@ -25,7 +25,10 @@ const chartData = {
   options: {
     scales: {
       y: {
-        beginAtZero: true
+        ticks: { color: 'white', beginAtZero: true }
+      },
+      x: {
+        ticks: { color: 'white', beginAtZero: true }
       }
     }
   },
