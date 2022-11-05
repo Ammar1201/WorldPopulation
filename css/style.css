@@ -1,11 +1,16 @@
-/* body {
+body {
   background: #333;
-} */
+}
 
 #myChart {
   height: 400px;
 }
 
+#msg {
+  color: #fff;
+  font-size: 3rem;
+  text-align: center;
+}
 
 #continents {
   height: 200px;

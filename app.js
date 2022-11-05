@@ -2,7 +2,34 @@ const ctx = document.getElementById('myChart');
 const continents = document.querySelector('#continents');
 const btns = document.querySelector('#btns');
 const loading = document.querySelector('.loader');
+const msg = document.querySelector('#msg');
 const tmpChart = {};
+const chartData = {
+  type: 'bar',
+  data: {
+      labels: [],
+      datasets: [
+        {
+          label: 'Population',
+          data: [],
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.8)',
+          ],
+          borderColor: [
+            'rgba(255, 99, 132, 1)',
+          ],
+          borderWidth: 1
+        },
+      ],
+  },
+  options: {
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    }
+  },
+};
 
 //* ----------------------------fetching data Functions--------------------------------------------
 const getData = async (url) => {
@@ -31,18 +58,6 @@ const postData = async (url, method) => {
 };
 
 //* ----------------------------Utility Functions--------------------------------------------
-const filterData = data => {
-  if(data !== undefined) {
-    const filteredData = data.filter(value => {
-      if(value !== undefined || value.error === true || value.data !== undefined) {
-        return value;
-      }
-    });
-    return filteredData;
-  }
-  return null;
-};
-
 const createBtn = (text) => {
   const btn = document.createElement('button');
   btn.textContent = text;
@@ -83,19 +98,33 @@ const disableDeleteAndShow = () => {
   loading.classList.remove('hidden');
 };
 
+const handleError = () => {
+  if(tmpChart.chart !== undefined) {
+    deleteBtns();
+    tmpChart.chart.destroy();
+    msg.textContent = 'Country data not found! Please choose again!';
+    msg.classList.remove('hidden');
+  }
+};
+
 //* ----------------------------get Functions--------------------------------------------
+const getMethod = (key, value) => {
+  const method = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      [key]: value
+    })
+  };
+  return method;
+};
+
 const getCountriesPopulations = countries => {
   const populationPromises = [];
   countries.forEach(country => {
-    const method = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        country: country.name.common
-      })
-    }
+    const method = getMethod('country', country.name.common);
     populationPromises.push(postData('https://countriesnow.space/api/v0.1/countries/population', method));
   });
   return populationPromises;
@@ -104,128 +133,55 @@ const getCountriesPopulations = countries => {
 const getCitiesPopulations = cities => {
   const populationPromises = [];
   cities.forEach(city => {
-    const method = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        city: city
-      })
-    }
+    const method = getMethod('city', city);
     populationPromises.push(postData('https://countriesnow.space/api/v0.1/countries/population/cities', method));
   });
   return populationPromises;
 };
 
-const getMethod = value => {
-  const method = {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      country: value
-    })
-  };
-  return method;
-};
-
 //* ----------------------------adding chart data Functions--------------------------------------------
 const addChartDataCountries = (countries, population) => {
-  const obj = {
-    type: 'bar',
-    data: {
-        labels: [],
-        datasets: [
-          {
-            label: 'Population',
-            data: [],
-            backgroundColor: [
-              'rgba(255, 99, 132, 0.8)',
-            ],
-            borderColor: [
-              'rgba(255, 99, 132, 1)',
-            ],
-            borderWidth: 1
-          },
-        ],
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    },
-  };
-  
+  chartData.data.labels = [];
+  chartData.data.datasets[0].data = [];
   countries.forEach((country, index) => {
     let length = -1;
     if(population[index].data !== undefined) {
       length = population[index].data.populationCounts.length - 1;
     }
     if(length !== -1) {
-      obj.data.labels.push(country.name.common);
+      chartData.data.labels.push(country.name.common);
       createBtn(country.name.common);
-      obj.data.datasets[0].data.push(population[index].data.populationCounts[length].value);
+      chartData.data.datasets[0].data.push(population[index].data.populationCounts[length].value);
     }
   });
-  return obj;
 };
 
 const addChartDataCities = (cities, population) => {
-  const obj = {
-    type: 'bar',
-    data: {
-        labels: [],
-        datasets: [
-          {
-            label: 'Population',
-            data: [],
-            backgroundColor: [
-              'rgba(255, 99, 132, 0.8)',
-            ],
-            borderColor: [
-              'rgba(255, 99, 132, 1)',
-            ],
-            borderWidth: 1
-          },
-        ],
-    },
-    options: {
-      scales: {
-        y: {
-          beginAtZero: true
-        }
-      }
-    },
-  };
-  
+  chartData.data.labels = [];
+  chartData.data.datasets[0].data = [];
   cities.forEach((city, index) => {
     let length = -1;
     if(population[index] !== null && population[index] !== undefined && population[index].data !== undefined) {
       length = population[index].data.populationCounts.length - 1;
     }
     if(length !== -1) {
-      obj.data.labels.push(city);
+      chartData.data.labels.push(city);
       createBtn(city);
-      obj.data.datasets[0].data.push(population[index].data.populationCounts[length].value);
+      chartData.data.datasets[0].data.push(population[index].data.populationCounts[length].value);
     }
   });
-  return obj;
 };
 
 //* ----------------------------filling chart Functions--------------------------------------------
 const fillChartCountries = async (url, continent) => {
+  msg.classList.add('hidden');
   disableDeleteAndShow();
   const item = window.localStorage.getItem(continent);
   if(item === null) {
     const countries = await getData(url + continent);
     const populationPromises = getCountriesPopulations(countries);
-    const populationTMP = await Promise.all(populationPromises);
-    const population = filterData(populationTMP);
-    const chartData = addChartDataCountries(countries, population);
+    const population = await Promise.all(populationPromises);
+    addChartDataCountries(countries, population);
     tmpChart.chart = new Chart(ctx, chartData);
     window.localStorage.setItem(continent, JSON.stringify(countries));
     window.localStorage.setItem(`${continent} countries population`, JSON.stringify(population));
@@ -233,7 +189,7 @@ const fillChartCountries = async (url, continent) => {
   else {
     const countries = JSON.parse(window.localStorage.getItem(continent));
     const population = JSON.parse(window.localStorage.getItem(`${continent} countries population`));
-    const chartData = addChartDataCountries(countries, population);
+    addChartDataCountries(countries, population);
     tmpChart.chart = new Chart(ctx, chartData);
   }
   loading.classList.add('hidden');
@@ -241,13 +197,18 @@ const fillChartCountries = async (url, continent) => {
 };
 
 const fillChartCities = async (url, country) => {
-  disableDeleteAndShow();
+  msg.classList.add('hidden');
   const item = window.localStorage.getItem(country);
   if(item === null) {
-    const cities = await postData(url, getMethod(country));
+    const cities = await postData(url, getMethod('country', country));
+    if(cities.error) {
+      handleError();
+      return;
+    }
+    disableDeleteAndShow();
     const populationPromises = getCitiesPopulations(cities.data);
     const population = await Promise.all(populationPromises);
-    const chartData = addChartDataCities(cities.data, population);
+    addChartDataCities(cities.data, population);
     tmpChart.chart = new Chart(ctx, chartData);
     window.localStorage.setItem(country, JSON.stringify(cities));
     window.localStorage.setItem(`${country} cities population`, JSON.stringify(population));
@@ -255,7 +216,7 @@ const fillChartCities = async (url, country) => {
   else {
     const cities = JSON.parse(window.localStorage.getItem(country));
     const population = JSON.parse(window.localStorage.getItem(`${country} cities population`));
-    const chartData = addChartDataCities(cities.data, population);
+    addChartDataCities(cities.data, population);
     tmpChart.chart = new Chart(ctx, chartData);
   }
   loading.classList.add('hidden');
