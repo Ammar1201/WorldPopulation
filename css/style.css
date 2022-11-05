@@ -2,6 +2,15 @@ body {
   background: #333;
 }
 
+h1, h2 {
+  text-align: center;
+  color: #fff;
+}
+
+label {
+  display: none;
+}
+
 #myChart {
   height: 400px;
 }

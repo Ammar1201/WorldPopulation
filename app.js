@@ -102,12 +102,11 @@ const disableDeleteAndShow = () => {
 };
 
 const handleError = () => {
-  if(tmpChart.chart !== undefined) {
-    deleteBtns();
-    tmpChart.chart.destroy();
-    msg.textContent = 'Country data not found! Please choose again!';
-    msg.classList.remove('hidden');
-  }
+  disableDeleteAndShow();
+  msg.textContent = 'Country data not found! Please choose again!';
+  msg.classList.remove('hidden');
+  loading.classList.add('hidden');
+  enableBtns(continents);
 };
 
 //* ----------------------------get Functions--------------------------------------------
@@ -201,6 +200,7 @@ const fillChartCountries = async (url, continent) => {
 
 const fillChartCities = async (url, country) => {
   msg.classList.add('hidden');
+  disableDeleteAndShow();
   const item = window.localStorage.getItem(country);
   if(item === null) {
     const cities = await postData(url, getMethod('country', country));
@@ -208,7 +208,6 @@ const fillChartCities = async (url, country) => {
       handleError();
       return;
     }
-    disableDeleteAndShow();
     const populationPromises = getCitiesPopulations(cities.data);
     const population = await Promise.all(populationPromises);
     addChartDataCities(cities.data, population);

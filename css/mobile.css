@@ -1,0 +1,51 @@
+@media (max-width: 539px) {
+  h1, h2 {
+    display: none;
+  }
+
+  label {
+    display: block;
+    font-size: 4rem;
+    text-align: center;
+    margin-top: 100px;
+    color: #fff;
+  }
+
+  #myChart {
+    display: none;
+  }
+  
+  #msg {
+    display: none;
+  }
+  
+  #continents {
+    display: none;
+  }
+}
+
+@media (min-width: 540px) and (max-width: 768px){
+  #continents {
+    gap: 1rem;
+  }
+  #continents button {
+    padding: 1rem 1rem;
+  }
+
+  #btns button {
+    padding: .5rem 1rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px){
+  #continents {
+    gap: 2rem;
+  }
+  #continents button {
+    padding: 1rem 2rem;
+  }
+
+  #btns button {
+    padding: .5rem 1rem;
+  }
+}
