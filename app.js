@@ -2,9 +2,9 @@ const ctx = document.getElementById('myChart');
 const continents = document.querySelector('#continents');
 const btns = document.querySelector('#btns');
 const loading = document.querySelector('.loader');
-let firstChart = true;
 const tmpChart = {};
 
+//* ----------------------------fetching data Functions--------------------------------------------
 const getData = async (url) => {
   try {
     const res = await fetch(url);
@@ -30,14 +30,7 @@ const postData = async (url, method) => {
   }
 };
 
-const checkStorage = (key) => {
-  const item = window.localStorage.getItem(key);
-  if(item !== null) {
-    return item;
-  }
-  return null;
-}
-
+//* ----------------------------Utility Functions--------------------------------------------
 const filterData = data => {
   if(data !== undefined) {
     const filteredData = data.filter(value => {
@@ -56,7 +49,7 @@ const createBtn = (text) => {
   btns.appendChild(btn);
 };
 
-const clearBtns = () => {
+const deleteBtns = () => {
   let child = btns.firstElementChild;
   while(child != null) {
     const tmp = child.nextElementSibling;
@@ -81,6 +74,16 @@ const enableBtns = element => {
   }
 };
 
+const disableDeleteAndShow = () => {
+  disableBtns(continents);
+  if(tmpChart.chart !== undefined) {
+    deleteBtns();
+    tmpChart.chart.destroy();
+  }
+  loading.classList.remove('hidden');
+};
+
+//* ----------------------------get Functions--------------------------------------------
 const getCountriesPopulations = countries => {
   const populationPromises = [];
   countries.forEach(country => {
@@ -115,6 +118,20 @@ const getCitiesPopulations = cities => {
   return populationPromises;
 };
 
+const getMethod = value => {
+  const method = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      country: value
+    })
+  };
+  return method;
+};
+
+//* ----------------------------adding chart data Functions--------------------------------------------
 const addChartDataCountries = (countries, population) => {
   const obj = {
     type: 'bar',
@@ -142,8 +159,6 @@ const addChartDataCountries = (countries, population) => {
       }
     },
   };
-
-  clearBtns();
   
   countries.forEach((country, index) => {
     let length = -1;
@@ -186,8 +201,6 @@ const addChartDataCities = (cities, population) => {
       }
     },
   };
-
-  clearBtns();
   
   cities.forEach((city, index) => {
     let length = -1;
@@ -203,27 +216,10 @@ const addChartDataCities = (cities, population) => {
   return obj;
 };
 
-// const updateChart = chartData => {
-//   if(firstChart) {
-//     const myChart = new Chart(ctx, chartData);
-//     tmpChart.chart = myChart;
-//     firstChart = false;
-//   }
-//   else {
-//     tmpChart.chart.destroy();
-//     const myChart = new Chart(ctx, chartData);
-//     tmpChart.chart = myChart;
-//   }
-// };
-
+//* ----------------------------filling chart Functions--------------------------------------------
 const fillChartCountries = async (url, continent) => {
-  disableBtns(continents);
-  disableBtns(btns);
-  if(tmpChart.chart !== undefined) {
-    tmpChart.chart.destroy();
-  }
-  loading.classList.remove('hidden');
-  const item = checkStorage(continent);
+  disableDeleteAndShow();
+  const item = window.localStorage.getItem(continent);
   if(item === null) {
     const countries = await getData(url + continent);
     const populationPromises = getCountriesPopulations(countries);
@@ -231,7 +227,6 @@ const fillChartCountries = async (url, continent) => {
     const population = filterData(populationTMP);
     const chartData = addChartDataCountries(countries, population);
     tmpChart.chart = new Chart(ctx, chartData);
-    // updateChart(chartData);
     window.localStorage.setItem(continent, JSON.stringify(countries));
     window.localStorage.setItem(`${continent} countries population`, JSON.stringify(population));
   }
@@ -240,37 +235,20 @@ const fillChartCountries = async (url, continent) => {
     const population = JSON.parse(window.localStorage.getItem(`${continent} countries population`));
     const chartData = addChartDataCountries(countries, population);
     tmpChart.chart = new Chart(ctx, chartData);
-    // updateChart(chartData);
   }
   loading.classList.add('hidden');
   enableBtns(continents);
-  enableBtns(btns);
 };
 
 const fillChartCities = async (url, country) => {
-  disableBtns(continents);
-  disableBtns(btns);
-  if(tmpChart.chart !== undefined) {
-    tmpChart.chart.destroy();
-  }
-  loading.classList.remove('hidden');
-  const item = checkStorage(country);
+  disableDeleteAndShow();
+  const item = window.localStorage.getItem(country);
   if(item === null) {
-    const cities = await postData(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        country: country
-      })
-    });
+    const cities = await postData(url, getMethod(country));
     const populationPromises = getCitiesPopulations(cities.data);
     const population = await Promise.all(populationPromises);
-    // const population = filterData(populationTMP);
     const chartData = addChartDataCities(cities.data, population);
     tmpChart.chart = new Chart(ctx, chartData);
-    // updateChart(chartData);
     window.localStorage.setItem(country, JSON.stringify(cities));
     window.localStorage.setItem(`${country} cities population`, JSON.stringify(population));
   }
@@ -279,31 +257,39 @@ const fillChartCities = async (url, country) => {
     const population = JSON.parse(window.localStorage.getItem(`${country} cities population`));
     const chartData = addChartDataCities(cities.data, population);
     tmpChart.chart = new Chart(ctx, chartData);
-    // updateChart(chartData);
   }
   loading.classList.add('hidden');
   enableBtns(continents);
-  enableBtns(btns);
 };
 
-continents.addEventListener('click', (e) => {
-  const target = e.target;
-  if(target.id === 'continents') {
-    return;
-  }
-  fillChartCountries('https://restcountries.com/v3.1/region/', target.textContent.toLowerCase());
-},
-{
-  capture: true
-});
+//* ----------------------------Events--------------------------------------------
+const startEvents = () => {
+  continents.addEventListener('click', (e) => {
+    const target = e.target;
+    if(target.id === 'continents') {
+      return;
+    }
+    fillChartCountries('https://restcountries.com/v3.1/region/', target.textContent.toLowerCase());
+  },
+  {
+    capture: true
+  });
+  
+  btns.addEventListener('click', (e) => {
+    const target = e.target;
+    if(target.id === 'btns') {
+      return;
+    }
+    fillChartCities('https://countriesnow.space/api/v0.1/countries/cities', target.textContent.toLowerCase());
+  },
+  {
+    capture: true
+  });
+};
 
-btns.addEventListener('click', (e) => {
-  const target = e.target;
-  if(target.id === 'btns') {
-    return;
-  }
-  fillChartCities('https://countriesnow.space/api/v0.1/countries/cities', target.textContent.toLowerCase());
-},
-{
-  capture: true
-});
+//* ----------------------------Main Function--------------------------------------------
+const main = () => {
+  startEvents();
+};
+
+main();
